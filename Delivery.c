@@ -19,6 +19,9 @@ void* phone_operator(void *threadId) {
     int *tid = (int *)threadId;
     unsigned int seed = time(NULL) ^ *tid;
 
+    struct timespec start_time, end_time;
+    clock_gettime(CLOCK_REALTIME, &start_time);
+
     pthread_mutex_lock(&phone_mutex);
 
     while (available_phones == 0) {
@@ -48,7 +51,7 @@ void* phone_operator(void *threadId) {
 
     float payment_prob = (float)rand_r(&seed) / RAND_MAX;
     if (payment_prob < Pfail) {
-        printf("Thread %d's payment failed. Order is cancelled.\n", *tid);
+        printf("Η παραγγελία με αριθμό %d απέτυχε.\n", *tid);
         pthread_mutex_lock(&phone_mutex);
         available_phones++;
         pthread_cond_signal(&phone_cond);
@@ -56,7 +59,7 @@ void* phone_operator(void *threadId) {
 
         return NULL;
     } else {
-        printf("Thread %d's payment succeeded. Order is processed.\n", *tid);
+        printf("Η παραγγελία με αριθμό %d καταχωρήθηκε.\n", *tid);
         for (int i = 0; i < order_pizzas; i++) {
             if (arr[i]==1) {
                 profit+=Cm;
@@ -71,7 +74,7 @@ void* phone_operator(void *threadId) {
 
     pthread_mutex_lock(&mutexCook);
     while (available_cook == 0) {
-        printf("No Cook Available\n");
+        //printf("No Cook Available\n");
         pthread_cond_wait(&condCook, &mutexCook);
     }
     pthread_mutex_lock(&phone_mutex);
@@ -82,18 +85,18 @@ void* phone_operator(void *threadId) {
     pthread_mutex_unlock(&mutexCook);
 
     sleep(Tprep * order_pizzas);
-    printf("Finished preparation for order %d \n", *tid);
+    //printf("Finished preparation for order %d \n", *tid);
 
     pthread_mutex_lock(&mutexOven);
     while (available_oven < order_pizzas) {
-        printf("Not enough ovens available\n");
+        //printf("Not enough ovens available\n");
         pthread_cond_wait(&condOven, &mutexOven);
     }
     available_oven -= order_pizzas;
     pthread_mutex_unlock(&mutexOven);
 
     sleep(Tbake * order_pizzas);
-    printf("Pizzas ready\n");
+    //printf("Pizzas ready\n");
 
     pthread_mutex_lock(&mutexOven);
     available_oven += order_pizzas;
@@ -104,6 +107,12 @@ void* phone_operator(void *threadId) {
     available_cook++;
     pthread_cond_signal(&condCook);
     pthread_mutex_unlock(&mutexCook);
+
+     clock_gettime(CLOCK_REALTIME, &end_time);
+    int elapsed_time = (end_time.tv_sec - start_time.tv_sec) + 
+                          (end_time.tv_nsec - start_time.tv_nsec) / 1e9;
+
+    printf("Η παραγγελία με αριθμό %d ετοιμάστηκε σε %d λεπτά.\n", *tid, elapsed_time );
 
     return NULL;
 }
