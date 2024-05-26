@@ -13,7 +13,12 @@ int available_oven = Noven;
 pthread_mutex_t phone_mutex, mutexCook, mutexOven;; 
 pthread_cond_t phone_cond, condCook, condOven;
 
-int profit=0; 
+int profit=0;
+int Sm=0;
+int Sp=0;
+int Ss=0;
+int successful_orders=0;
+int failed_orders=0; 
 
 void* phone_operator(void *threadId) {
     int *tid = (int *)threadId;
@@ -39,10 +44,13 @@ void* phone_operator(void *threadId) {
         float rand_prob = (float)rand_r(&seed) / RAND_MAX;
         if (rand_prob < Pm) {
             arr[i]=1;
+            Sm++;
         } else if (rand_prob < Pm + Pp) {
             arr[i]=2;
+            Sp++;
         } else {
             arr[i]=3;
+            Ss++;
         }
     }
 
@@ -51,6 +59,7 @@ void* phone_operator(void *threadId) {
 
     float payment_prob = (float)rand_r(&seed) / RAND_MAX;
     if (payment_prob < Pfail) {
+        failed_orders++;
         printf("Η παραγγελία με αριθμό %d απέτυχε.\n", *tid);
         pthread_mutex_lock(&phone_mutex);
         available_phones++;
@@ -59,6 +68,7 @@ void* phone_operator(void *threadId) {
 
         return NULL;
     } else {
+        successful_orders++;
         printf("Η παραγγελία με αριθμό %d καταχωρήθηκε.\n", *tid);
         for (int i = 0; i < order_pizzas; i++) {
             if (arr[i]==1) {
@@ -118,7 +128,7 @@ void* phone_operator(void *threadId) {
 }
 
 int main(int argc, char *argv[]) { 
-  int Ncust = 15; 
+  int Ncust = 10; 
   pthread_t threads[Ncust]; 
   int threadIds[Ncust];
   int threadTime[Ncust]; 
@@ -157,6 +167,12 @@ int main(int argc, char *argv[]) {
    pthread_mutex_destroy(&mutexOven);
    pthread_cond_destroy(&condOven);
 
-printf("All threads have completed with total profit %d.\n",  profit); 
+printf("Όλες οι παραγγελίες έχουν ολοκληρωθεί.\n");
+    printf("Συνολικά έσοδα: %d\n", profit);
+    printf("Συνολικές πίτσες Margarita: %d\n", Sm);
+    printf("Συνολικές πίτσες Peperoni: %d\n", Sp);
+    printf("Συνολικές πίτσες Special: %d\n", Ss);
+    printf("Πλήθος πετυχημένων παραγγελειών: %d\n", successful_orders);
+    printf("Πλήθος αποτυχημένων παραγγελειών: %d\n", failed_orders); 
 return 0; 
 }  
