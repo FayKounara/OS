@@ -24,8 +24,8 @@ int max_time=0;
 int sum_cold=0;
 int max_cold=0;
 int rc;
-void* phone_operator(void *threadId) {
-    int *tid = (int *)threadId;
+void* phone_operator(void *t) {
+    int *tid = (int *)t;
     unsigned int seed = time(NULL) ^ *tid;
     //printf("%d\n", *tid);
     struct timespec start_time, start_time_cold, end_time_prepare, end_time_deliver;
@@ -104,20 +104,6 @@ void* phone_operator(void *threadId) {
         }
     }
 
-
-    rc=pthread_mutex_lock(&mutexCook);
-    if (rc != 0) {	
-	printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
-	pthread_exit(t);
-    }
-    while (available_cook == 0) {
-        //printf("No Cook Available\n");
-        rc=pthread_cond_wait(&condCook, &mutexCook);
-        if (rc != 0) {	
-		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
-		pthread_exit(t);
-	}
-    }
     rc=pthread_mutex_lock(&phone_mutex);
     if (rc != 0) {	
 			printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
@@ -134,6 +120,22 @@ void* phone_operator(void *threadId) {
 	printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 	pthread_exit(t);
     }
+
+
+    rc=pthread_mutex_lock(&mutexCook);
+    if (rc != 0) {	
+	printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
+	pthread_exit(t);
+    }
+    while (available_cook == 0) {
+        //printf("No Cook Available\n");
+        rc=pthread_cond_wait(&condCook, &mutexCook);
+        if (rc != 0) {	
+		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
+		pthread_exit(t);
+	    }
+    }
+    
     available_cook--;
     pthread_mutex_unlock(&mutexCook);
     if (rc != 0) {	
