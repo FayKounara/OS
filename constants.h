@@ -2,7 +2,7 @@
 #define CONSTANTS_H
 
 #define  Ntel 2
-#define  Ncook2
+#define  Ncook 2
 #define Noven 10
 #define Ndeliver 10
 #define Torderlow 1
