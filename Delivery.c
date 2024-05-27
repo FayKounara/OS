@@ -165,28 +165,29 @@ void* phone_operator(void *t) {
 			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 			pthread_exit(t);
 	}
-    sleep(Tbake); 
-
-    //printf("Pizzas ready\n");
-    clock_gettime(CLOCK_REALTIME, &start_time_cold);
-
-    rc=pthread_mutex_lock(&mutexOven);
+    sleep(Tbake);
+    rc=pthread_mutex_lock(&mutexCook);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
 		pthread_exit(t);
 	}
-    available_oven += order_pizzas;
-    rc=pthread_cond_signal(&condOven);
+
+    available_cook++;
+    rc=pthread_cond_signal(&condCook);
     if (rc != 0) {	
 					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
 					pthread_exit(t);
 	}
-    
-    rc=pthread_mutex_unlock(&mutexOven);
+    rc=pthread_mutex_unlock(&mutexCook);
     if (rc != 0) {	
-			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-			pthread_exit(t);
+		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
+		pthread_exit(t);
 	}
+
+
+    clock_gettime(CLOCK_REALTIME, &start_time_cold);
+
+    
     rc=pthread_mutex_lock(&mutexDeliverer);
     if (rc != 0) {	
 			printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
@@ -206,30 +207,29 @@ void* phone_operator(void *t) {
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 		pthread_exit(t);
 	}
-    rc=pthread_mutex_lock(&mutexCook);
+    rc=pthread_mutex_lock(&mutexOven);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
 		pthread_exit(t);
 	}
-
-    available_cook++;
-    rc=pthread_cond_signal(&condCook);
+    available_oven += order_pizzas;
+    rc=pthread_cond_signal(&condOven);
     if (rc != 0) {	
 					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
 					pthread_exit(t);
 	}
-    rc=pthread_mutex_unlock(&mutexCook);
+    
+    rc=pthread_mutex_unlock(&mutexOven);
     if (rc != 0) {	
-		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-		pthread_exit(t);
+			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
+			pthread_exit(t);
 	}
+    sleep(Tpack*order_pizzas);
     clock_gettime(CLOCK_REALTIME, &end_time_prepare);
     int elapsed_time_prepare = (end_time_prepare.tv_sec - start_time.tv_sec) + 
                           (end_time_prepare.tv_nsec - start_time.tv_nsec) / 1e9;
 
     printf("Η παραγγελία με αριθμό %d ετοιμάστηκε σε %d λεπτά.\n", *tid, elapsed_time_prepare );
-    
-    sleep(Tpack*order_pizzas);
 
     int waiting=Tdellow + rand_r(&seed) % (Tdelhigh - Tdellow + 1);
     sleep(waiting);
