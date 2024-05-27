@@ -40,9 +40,9 @@ void* phone_operator(void *threadId) {
     while (available_phones == 0) {
         rc=pthread_cond_wait(&phone_cond, &phone_mutex);
         if (rc != 0) {	
-			printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
-			pthread_exit(t);
-		}
+		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
+		pthread_exit(t);
+	}
     }
 
     // At this point, this customer is next in line
@@ -53,7 +53,7 @@ void* phone_operator(void *threadId) {
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 		pthread_exit(t);
-	}
+    }
     int arr[order_pizzas];
     for (int i = 0; i < order_pizzas; i++) {
         float rand_prob = (float)rand_r(&seed) / RAND_MAX;
@@ -80,14 +80,14 @@ void* phone_operator(void *threadId) {
         available_phones++;
         rc=pthread_cond_signal(&phone_cond);
         if (rc != 0) {	
-					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
-					pthread_exit(t);
-		}	
+		printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
+		pthread_exit(t);
+	}	
         rc=pthread_mutex_unlock(&phone_mutex);
         if (rc != 0) {	
-			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-			pthread_exit(t);
-		}
+		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
+		pthread_exit(t);
+	}
 
         return NULL;
     } else {
@@ -107,55 +107,55 @@ void* phone_operator(void *threadId) {
 
     rc=pthread_mutex_lock(&mutexCook);
     if (rc != 0) {	
-		printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
-		pthread_exit(t);
-	}
+	printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
+	pthread_exit(t);
+    }
     while (available_cook == 0) {
         //printf("No Cook Available\n");
         rc=pthread_cond_wait(&condCook, &mutexCook);
         if (rc != 0) {	
-			printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
-			pthread_exit(t);
-		}
+		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
+		pthread_exit(t);
+	}
     }
     rc=pthread_mutex_lock(&phone_mutex);
     if (rc != 0) {	
 			printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
 			pthread_exit(t);
-	}	
+    }	
     available_phones++;
     rc=pthread_cond_signal(&phone_cond);
     if (rc != 0) {	
-					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
-					pthread_exit(t);
-	}	
+	printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
+	pthread_exit(t);
+    }	
     rc=pthread_mutex_unlock(&phone_mutex);
     if (rc != 0) {	
-			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-			pthread_exit(t);
-	}
+	printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
+	pthread_exit(t);
+    }
     available_cook--;
     pthread_mutex_unlock(&mutexCook);
     if (rc != 0) {	
-			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-			pthread_exit(t);
-	}
+	printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
+	pthread_exit(t);
+    }
     sleep(Tprep * order_pizzas);
     //printf("Finished preparation for order %d \n", *tid);
 
     rc=pthread_mutex_lock(&mutexOven);
     if (rc != 0) {	
-			printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
-			pthread_exit(t);
-	}
+	printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
+	pthread_exit(t);
+    }
     
     while (available_oven < order_pizzas) {
         //printf("Not enough ovens available\n");
         rc=pthread_cond_wait(&condOven, &mutexOven);
         if (rc != 0) {	
-					printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
-					pthread_exit(t);
-				}
+		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
+		pthread_exit(t);
+	}
     }
     available_oven -= order_pizzas;
     rc=pthread_mutex_unlock(&mutexOven);
@@ -307,20 +307,53 @@ int main(int argc, char *argv[]) {
         }
 
         //printf("Main: creating thread %d\n", threadIds[i]);
-        pthread_create(&threads[i], NULL, phone_operator, &threadIds[i]);
-        sleep(threadTime[i] - (i > 0 ? threadTime[i - 1] : 0));
+	sleep(threadTime[i] - (i > 0 ? threadTime[i - 1] : 0));
+        rc=pthread_create(&threads[i], NULL, phone_operator, &threadIds[i]);
+	if (rc != 0) {
+    		printf("ERROR: return code from pthread_create() is %d\n", rc);
+       		exit(-1);
+	}
+        
    }
    // Join threads 
    for (int i = 0; i < Ncust; i++) { 
-      pthread_join(threads[i], NULL); 
+      pthread_join(threads[i], NULL);
+      if (rc != 0) {
+			printf("ERROR: return code from pthread_join() is %d\n", rc);
+			exit(-1);		
+      }
    } 
    
-   pthread_mutex_destroy(&phone_mutex); 
-   pthread_cond_destroy(&phone_cond); 
-   pthread_mutex_destroy(&mutexCook);
-   pthread_cond_destroy(&condCook);
-   pthread_mutex_destroy(&mutexOven);
-   pthread_cond_destroy(&condOven);
+   rc=pthread_mutex_destroy(&phone_mutex);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   } 
+   rc=pthread_cond_destroy(&phone_cond);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   }
+   rc=pthread_mutex_destroy(&mutexCook);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   }
+   rc=pthread_cond_destroy(&condCook);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   }
+   rc=pthread_mutex_destroy(&mutexOven);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   }
+   rc=pthread_cond_destroy(&condOven);
+   if (rc != 0) {
+		printf("ERROR: return code from pthread_mutex_destroy() is %d\n", rc);
+		exit(-1);		
+   }
 
 printf("Όλες οι παραγγελίες έχουν ολοκληρωθεί.\n");
     printf("Συνολικά έσοδα: %d\n", profit);
