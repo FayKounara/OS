@@ -165,7 +165,7 @@ void* phone_operator(void *t) {
 			printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 			pthread_exit(t);
 	}
-    sleep(Tbake);
+    
     rc=pthread_mutex_lock(&mutexCook);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
@@ -184,7 +184,7 @@ void* phone_operator(void *t) {
 		pthread_exit(t);
 	}
 
-
+    sleep(Tbake);
     clock_gettime(CLOCK_REALTIME, &start_time_cold);
 
     
@@ -248,7 +248,7 @@ void* phone_operator(void *t) {
     if (max_cold<elapsed_time_cold) {
         max_cold=elapsed_time_cold;
     }
-    
+    sleep(waiting);
     available_deliverer +=1;
     rc=pthread_cond_signal(&condDeliverer);
     if (rc != 0) {	
@@ -256,26 +256,6 @@ void* phone_operator(void *t) {
 					pthread_exit(t);
 	}
     rc=pthread_mutex_unlock(&mutexDeliverer);
-    if (rc != 0) {	
-		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
-		pthread_exit(t);
-	}
-    rc=pthread_mutex_lock(&mutexOven);
-    if (rc != 0) {	
-		printf("ERROR: return code from pthread_mutex_lock() is %d\n", rc);
-		pthread_exit(t);
-	}	
-    available_oven += order_pizzas;
-    rc=pthread_cond_signal(&condOven);
-    if (rc != 0) {	
-					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
-					pthread_exit(t);
-	}
-    if (rc != 0) {	
-					printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
-					pthread_exit(t);
-	}
-    rc=pthread_mutex_unlock(&mutexOven);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 		pthread_exit(t);
