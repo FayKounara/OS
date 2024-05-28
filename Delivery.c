@@ -27,7 +27,6 @@ int rc;
 void* phone_operator(void *t) {
     int *tid = (int *)t;
     unsigned int seed = time(NULL) ^ *tid;
-    //printf("%d\n", *tid);
     struct timespec start_time, start_time_cold, end_time_prepare, end_time_deliver;
     clock_gettime(CLOCK_REALTIME, &start_time);
 
@@ -40,15 +39,13 @@ void* phone_operator(void *t) {
     while (available_phones == 0) {
         rc=pthread_cond_wait(&phone_cond, &phone_mutex);
         if (rc != 0) {	
-		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
-		pthread_exit(t);
-	}
+		    printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
+		    pthread_exit(t);
+	    }
     }
-
-    // At this point, this customer is next in line
+    
     available_phones--;
     int order_pizzas = Norderlow + rand_r(&seed) % (Norderhigh - Norderlow + 1);
-
     rc=pthread_mutex_unlock(&phone_mutex);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
@@ -59,13 +56,10 @@ void* phone_operator(void *t) {
         float rand_prob = (float)rand_r(&seed) / RAND_MAX;
         if (rand_prob < Pm) {
             arr[i]=1;
-            Sm++;
         } else if (rand_prob < Pm + Pp) {
             arr[i]=2;
-            Sp++;
         } else {
             arr[i]=3;
-            Ss++;
         }
     }
 
@@ -82,7 +76,7 @@ void* phone_operator(void *t) {
         if (rc != 0) {	
 		printf("ERROR: return code from pthread_cond_signal() is %d\n", rc);
 		pthread_exit(t);
-	}	
+	    }	
         rc=pthread_mutex_unlock(&phone_mutex);
         if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
@@ -96,10 +90,13 @@ void* phone_operator(void *t) {
         for (int i = 0; i < order_pizzas; i++) {
             if (arr[i]==1) {
                 profit+=Cm;
+                Sm++;
             } else if (arr[i]==2) {
                 profit+=Cp;
+                Sp++;
             } else {
                 profit+=Cs;
+                Ss++;
             }
         }
     }
@@ -128,7 +125,6 @@ void* phone_operator(void *t) {
 	pthread_exit(t);
     }
     while (available_cook == 0) {
-        //printf("No Cook Available\n");
         rc=pthread_cond_wait(&condCook, &mutexCook);
         if (rc != 0) {	
 		printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
@@ -143,7 +139,6 @@ void* phone_operator(void *t) {
 	pthread_exit(t);
     }
     sleep(Tprep * order_pizzas);
-    //printf("Finished preparation for order %d \n", *tid);
 
     rc=pthread_mutex_lock(&mutexOven);
     if (rc != 0) {	
@@ -264,13 +259,20 @@ void* phone_operator(void *t) {
     return NULL;
 }
 
-int main(int argc, char *argv[]) { 
-  int Ncust = 50; 
+int main(int argc, char *argv[]) {
+
+  if (argc != 3) {
+        printf("Παρακαλώ συμπληρώστε τα σωστά στοιχεία.");
+        return 1;
+  } 
+
+  int Ncust = strtol(argv[1], NULL, 10);
+  unsigned int seed = strtoul(argv[2], NULL, 10);
+
   pthread_t threads[Ncust]; 
   int threadIds[Ncust];
   int threadTime[Ncust]; 
 
-  unsigned int seed = time(NULL);
   pthread_mutex_init(&mutexCook, NULL);
   pthread_cond_init(&condCook, NULL);
   
