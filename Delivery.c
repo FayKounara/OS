@@ -26,7 +26,7 @@ int max_cold=0;
 int rc;
 unsigned int seed;
 
-void* phone_operator(void *t) {
+void* operator(void *t) {
     int *tid = (int *)t;
     struct timespec start_time, start_time_cold, end_time_prepare, end_time_deliver;
     clock_gettime(CLOCK_REALTIME, &start_time);
@@ -46,12 +46,12 @@ void* phone_operator(void *t) {
     }
     
     available_phones--;
-    int order_pizzas = Norderlow + rand_r(&seed) % (Norderhigh - Norderlow + 1);
     rc=pthread_mutex_unlock(&phone_mutex);
     if (rc != 0) {	
 		printf("ERROR: return code from pthread_mutex_unlock() is %d\n", rc);
 		pthread_exit(t);
     }
+    int order_pizzas = Norderlow + rand_r(&seed) % (Norderhigh - Norderlow + 1);
     int arr[order_pizzas];
     for (int i = 0; i < order_pizzas; i++) {
         float rand_prob = (float)rand_r(&seed) / RAND_MAX;
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
         }
 
 	    sleep(threadTime);
-        rc=pthread_create(&threads[i], NULL, phone_operator, &threadIds[i]);
+        rc=pthread_create(&threads[i], NULL, operator, &threadIds[i]);
         if (rc != 0) {
             printf("ERROR: return code from pthread_create() is %d\n", rc);
             exit(-1);
