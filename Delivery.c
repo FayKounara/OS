@@ -10,7 +10,7 @@ int available_cook = Ncook;
 int available_oven = Noven;
 int available_deliverer=Ndeliver;
 
-pthread_mutex_t phone_mutex, mutexCook, mutexOven, mutexDeliverer; 
+pthread_mutex_t phone_mutex, mutexCook, mutexOven, mutexDeliverer, mutexStatistics, mutexPrint; 
 pthread_cond_t phone_cond, condCook, condOven, condDeliverer;
 
 int profit=0;
@@ -69,8 +69,30 @@ void* operator(void *t) {
 
     float payment_prob = (float)rand_r(&seed) / RAND_MAX;
     if (payment_prob < Pfail) {
+        rc=pthread_mutex_lock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+            pthread_exit(t);
+        }
         failed_orders++;
-        printf("Η παραγγελία με αριθμό %d απέτυχε.\n", *tid);
+        rc=pthread_mutex_unlock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+            pthread_exit(t);
+        }
+
+        rc=pthread_mutex_lock(&mutexPrint);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+            pthread_exit(t);
+        }
+        printf("Your order with id %d was cancelled.\n", *tid);
+
+        rc=pthread_mutex_unlock(&mutexPrint);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+            pthread_exit(t);
+        }
         pthread_mutex_lock(&phone_mutex);
         available_phones++;
         rc=pthread_cond_signal(&phone_cond);
@@ -86,8 +108,35 @@ void* operator(void *t) {
 
         return NULL;
     } else {
+        rc=pthread_mutex_lock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+            pthread_exit(t);
+        }
         successful_orders++;
-        printf("Η παραγγελία με αριθμό %d καταχωρήθηκε.\n", *tid);
+        rc=pthread_mutex_unlock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+            pthread_exit(t);
+        }
+
+        rc=pthread_mutex_lock(&mutexPrint);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+            pthread_exit(t);
+        }
+        printf("Your order with id %d was successful.\n", *tid);
+
+        rc=pthread_mutex_unlock(&mutexPrint);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+            pthread_exit(t);
+        }
+        rc=pthread_mutex_lock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+            pthread_exit(t);
+        }
         for (int i = 0; i < order_pizzas; i++) {
             if (arr[i]==1) {
                 profit+=Cm;
@@ -99,6 +148,11 @@ void* operator(void *t) {
                 profit+=Cs;
                 Ss++;
             }
+        }
+        rc=pthread_mutex_unlock(&mutexStatistics);
+        if (rc != 0) {	
+            printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+            pthread_exit(t);
         }
     }
 
@@ -224,25 +278,66 @@ void* operator(void *t) {
     clock_gettime(CLOCK_REALTIME, &end_time_prepare);
     int elapsed_time_prepare = (end_time_prepare.tv_sec - start_time.tv_sec) + 
                           (end_time_prepare.tv_nsec - start_time.tv_nsec) / 1e9;
-
-    printf("Η παραγγελία με αριθμό %d ετοιμάστηκε σε %d λεπτά.\n", *tid, elapsed_time_prepare );
+    rc=pthread_mutex_lock(&mutexPrint);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+        pthread_exit(t);
+    }
+    printf("Your order with id %d was ready in %d minutes.\n", *tid, elapsed_time_prepare );
+    rc=pthread_mutex_unlock(&mutexPrint);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+        pthread_exit(t);
+    }
 
     int waiting=Tdellow + rand_r(&seed) % (Tdelhigh - Tdellow + 1);
     sleep(waiting);
     clock_gettime(CLOCK_REALTIME, &end_time_deliver);
     int elapsed_time_delivery = (end_time_deliver.tv_sec - start_time.tv_sec) + 
                       (end_time_deliver.tv_nsec - start_time.tv_nsec) / 1e9;
-    printf("Η παραγγελία με αριθμό %d παραδόθηκε σε %d λεπτά.\n", *tid, elapsed_time_delivery );
+
+    rc=pthread_mutex_lock(&mutexPrint);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+        pthread_exit(t);
+    }
+    printf("The order with id %d was delivered in %d minutes.\n", *tid, elapsed_time_delivery );
+    rc=pthread_mutex_unlock(&mutexPrint);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+        pthread_exit(t);
+    }
+    rc=pthread_mutex_lock(&mutexStatistics);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+        pthread_exit(t);
+    }
     sum_total_time+=elapsed_time_delivery;
     if (max_time<elapsed_time_delivery) {
         max_time=elapsed_time_delivery;
     }
+    rc=pthread_mutex_unlock(&mutexStatistics);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+        pthread_exit(t);
+    }
 
     int elapsed_time_cold = (end_time_deliver.tv_sec - start_time_cold.tv_sec) + 
                       (end_time_deliver.tv_nsec - start_time_cold.tv_nsec) / 1e9;
+        
+    rc=pthread_mutex_lock(&mutexStatistics);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
+        pthread_exit(t);
+    }
     sum_cold+=elapsed_time_cold;
     if (max_cold<elapsed_time_cold) {
         max_cold=elapsed_time_cold;
+    }
+    rc=pthread_mutex_unlock(&mutexStatistics);
+    if (rc != 0) {	
+        printf("ERROR: return code from pthrea`-d_mutex_unlock() is %d\n", rc);
+        pthread_exit(t);
     }
     sleep(waiting);
     rc=pthread_mutex_lock(&mutexDeliverer);
@@ -268,7 +363,7 @@ void* operator(void *t) {
 int main(int argc, char *argv[]) {
 
   if (argc != 3) {
-        printf("Παρακαλώ συμπληρώστε τα σωστά στοιχεία.");
+        printf("Please enter the correct values.");
         return 1;
   } 
 
@@ -344,22 +439,22 @@ int main(int argc, char *argv[]) {
 		exit(-1);		
    }
 
-printf("Όλες οι παραγγελίες έχουν ολοκληρωθεί.\n");
-    printf("Συνολικά έσοδα: %d\n", profit);
-    printf("Συνολικές πίτσες Margarita: %d\n", Sm);
-    printf("Συνολικές πίτσες Peperoni: %d\n", Sp);
-    printf("Συνολικές πίτσες Special: %d\n", Ss);
-    printf("Πλήθος πετυχημένων παραγγελειών: %d\n", successful_orders);
-    printf("Πλήθος αποτυχημένων παραγγελειών: %d\n", failed_orders); 
+printf("All the orders have been completed.\n");
+    printf("Total Profit: %d\n", profit);
+    printf("Total of Margarita orders: %d\n", Sm);
+    printf("Total of Peperoni orders: %d\n", Sp);
+    printf("Total of Special orders: %d\n", Ss);
+    printf("Total of successful orders: %d\n", successful_orders);
+    printf("Total of cancelled orders: %d\n", failed_orders); 
 
     if (successful_orders>0) {
         double average_time= sum_total_time/successful_orders;
-        printf("Ο μέσος χρόνος εξυπηρέτησης των πελατών είναι: %.2f \n", average_time); 
-        printf("Ο μέγιστος χρόνος εξυπηρέτησης των πελατών είναι: %d\n", max_time);
+        printf("The average service time was: %.2f \n", average_time); 
+        printf("The maximum service time was: %d\n", max_time);
 
         double average_cold_time= sum_cold/successful_orders;
-        printf("Ο μέσος χρόνος κρυώματος της παραγγελιας είναι: %.2f \n", average_cold_time); 
-        printf("Ο μέγιστος χρόνος κρυώματος της παραγγελιας είναι: %d\n", max_cold);
+        printf("The average cold time was: %.2f \n", average_cold_time); 
+        printf("The maximum cold time was: %d\n", max_cold);
     }
 return 0; 
 }  
