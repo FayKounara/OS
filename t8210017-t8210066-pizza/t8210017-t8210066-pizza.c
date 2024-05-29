@@ -363,14 +363,19 @@ void* operator(void *t) {
 int main(int argc, char *argv[]) {
 
   if (argc != 3) {
-        printf("Please enter the correct values.");
+        printf("Please enter the correct values.\n");
         return 1;
   } 
 
-  int Ncust = strtol(argv[1], NULL, 10);
-  seed = strtoul(argv[2], NULL, 10);
+  int Ncust = atoi(argv[1]);
+  seed = atoi(argv[2]);
 
-  pthread_t threads[Ncust]; 
+  pthread_t *threads; 
+  threads = malloc(Ncust * sizeof(pthread_t));
+  if (threads == NULL) {
+    printf("NOT ENOUGH MEMORY!\n");
+	  return -1;
+  }
   int threadIds[Ncust]; 
   int threadTime;
 
@@ -399,6 +404,7 @@ int main(int argc, char *argv[]) {
         }
         
    }
+   
    // Join threads 
    for (int i = 0; i < Ncust; i++) { 
       pthread_join(threads[i], NULL);
@@ -407,6 +413,7 @@ int main(int argc, char *argv[]) {
 			exit(-1);		
       }
    } 
+   free(threads);
    
    rc=pthread_mutex_destroy(&phone_mutex);
    if (rc != 0) {
@@ -457,4 +464,5 @@ printf("All the orders have been completed.\n");
         printf("The maximum cold time was: %d\n", max_cold);
     }
 return 0; 
+
 }  
