@@ -24,9 +24,10 @@ int max_time=0;
 int sum_cold=0;
 int max_cold=0;
 int rc;
+unsigned int seed;
+
 void* phone_operator(void *t) {
     int *tid = (int *)t;
-    unsigned int seed = time(NULL) ^ *tid;
     struct timespec start_time, start_time_cold, end_time_prepare, end_time_deliver;
     clock_gettime(CLOCK_REALTIME, &start_time);
 
@@ -272,11 +273,11 @@ int main(int argc, char *argv[]) {
   } 
 
   int Ncust = strtol(argv[1], NULL, 10);
-  unsigned int seed = strtoul(argv[2], NULL, 10);
+  seed = strtoul(argv[2], NULL, 10);
 
   pthread_t threads[Ncust]; 
-  int threadIds[Ncust];
-  int threadTime[Ncust]; 
+  int threadIds[Ncust]; 
+  int threadTime;
 
   pthread_mutex_init(&mutexCook, NULL);
   pthread_cond_init(&condCook, NULL);
@@ -290,18 +291,17 @@ int main(int argc, char *argv[]) {
    for (int i = 0; i < Ncust; i++) {
         threadIds[i] = i + 1;
         if (i == 0) {
-            threadTime[i] = 0;
+            threadTime = 0;
         } else {
-            threadTime[i] = threadTime[i - 1] + Torderlow + rand_r(&seed) % (Torderhigh - Torderlow + 1);
+            threadTime =  Torderlow + rand_r(&seed) % (Torderhigh - Torderlow + 1);
         }
 
-        //printf("Main: creating thread %d\n", threadIds[i]);
-	sleep(threadTime[i] - (i > 0 ? threadTime[i - 1] : 0));
+	    sleep(threadTime);
         rc=pthread_create(&threads[i], NULL, phone_operator, &threadIds[i]);
-	if (rc != 0) {
-    		printf("ERROR: return code from pthread_create() is %d\n", rc);
-       		exit(-1);
-	}
+        if (rc != 0) {
+            printf("ERROR: return code from pthread_create() is %d\n", rc);
+            exit(-1);
+        }
         
    }
    // Join threads 
