@@ -10,7 +10,7 @@ int available_cook = Ncook;
 int available_oven = Noven;
 int available_deliverer=Ndeliver;
 
-pthread_mutex_t phone_mutex, mutexCook, mutexOven, mutexDeliverer, mutexStatistics, mutexPrint; 
+pthread_mutex_t phone_mutex, mutexCook, mutexOven, mutexDeliverer, mutexStatistics, mutexPrint, mutexTest; 
 pthread_cond_t phone_cond, condCook, condOven, condDeliverer;
 
 int profit=0;
@@ -244,7 +244,6 @@ void* operator(void *t) {
 			pthread_exit(t);
 	}	
     while (available_deliverer == 0) {
-        printf("No Deliverer Available\n");
         rc=pthread_cond_wait(&condDeliverer, &mutexDeliverer);
         if (rc != 0) {	
 					printf("ERROR: return code from pthread_cond_wait() is %d\n", rc);
@@ -276,8 +275,8 @@ void* operator(void *t) {
 	}
     sleep(Tpack*order_pizzas);
     clock_gettime(CLOCK_REALTIME, &end_time_prepare);
-    int elapsed_time_prepare = (end_time_prepare.tv_sec - start_time.tv_sec) + 
-                          (end_time_prepare.tv_nsec - start_time.tv_nsec) / 1e9;
+    int elapsed_time_prepare = end_time_prepare.tv_sec - start_time.tv_sec ;
+                          
     rc=pthread_mutex_lock(&mutexPrint);
     if (rc != 0) {	
         printf("ERROR: return code from pthrea`-d_mutex_lock() is %d\n", rc);
@@ -293,8 +292,7 @@ void* operator(void *t) {
     int waiting=Tdellow + rand_r(&seed) % (Tdelhigh - Tdellow + 1);
     sleep(waiting);
     clock_gettime(CLOCK_REALTIME, &end_time_deliver);
-    int elapsed_time_delivery = (end_time_deliver.tv_sec - start_time.tv_sec) + 
-                      (end_time_deliver.tv_nsec - start_time.tv_nsec) / 1e9;
+    int elapsed_time_delivery = end_time_deliver.tv_sec - start_time.tv_sec;
 
     rc=pthread_mutex_lock(&mutexPrint);
     if (rc != 0) {	
@@ -395,13 +393,13 @@ int main(int argc, char *argv[]) {
         } else {
             threadTime =  Torderlow + rand_r(&seed) % (Torderhigh - Torderlow + 1);
         }
-
-	    sleep(threadTime);
+        sleep(threadTime);
         rc=pthread_create(&threads[i], NULL, operator, &threadIds[i]);
         if (rc != 0) {
             printf("ERROR: return code from pthread_create() is %d\n", rc);
             exit(-1);
         }
+        
         
    }
    
